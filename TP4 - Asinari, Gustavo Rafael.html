@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TP4 · Transformada de Hough - Asinari, Gustavo Rafael</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --secondary: #64748b;
+      --success: #059669;
+      --warning: #d97706;
+      --error: #dc2626;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+      --border: #e2e8f0;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Inter, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem;
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+      color: var(--secondary);
+      font-size: 0.9rem;
+    }
+    
+    .tabs {
+      display: flex;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+    }
+    
+    .tab {
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    
+    .tab.active {
+      border-bottom-color: var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    
+    .tab:hover:not(.active) {
+      background: #f1f5f9;
+    }
+    
+    .tab-content {
+      display: none;
+      padding: 1.5rem;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .canvas-container {
+      background: #0f172a;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+      position: relative;
+    }
+    
+    canvas {
+      background: #0b1220;
+      border: 1px solid #334155;
+      border-radius: 0.5rem;
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+    }
+    
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+      min-width: 120px;
+    }
+    
+    label {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    
+    input, select, button {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+    }
+    
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #1d4ed8;
+    }
+    
+    button.secondary {
+      background: var(--secondary);
+    }
+    
+    button.secondary:hover {
+      background: #475569;
+    }
+    
+    button.success {
+      background: var(--success);
+    }
+    
+    button.success:hover {
+      background: #047857;
+    }
+    
+    button.warning {
+      background: var(--warning);
+    }
+    
+    button.warning:hover {
+      background: #b45309;
+    }
+    
+    .file-input {
+      display: none;
+    }
+    
+    .file-label {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: var(--primary);
+      color: white;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      text-align: center;
+    }
+    
+    .results {
+      margin-top: 1rem;
+    }
+    
+    .result-item {
+      background: #f1f5f9;
+      border-radius: 0.375rem;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+      border: 1px solid var(--border);
+      padding: 0.75rem;
+      text-align: left;
+    }
+    
+    .comparison-table th {
+      background: #f1f5f9;
+      font-weight: 600;
+    }
+    
+    .comparison-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    
+    .recommendation {
+      background: #dbeafe;
+      border: 1px solid #bfdbfe;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    
+    .recommendation h3 {
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+    
+    .processing-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+      border-radius: 0.5rem;
+      display: none;
+    }
+    
+    .image-upload-section {
+      background: #f1f5f9;
+      border: 2px dashed #cbd5e1;
+      border-radius: 0.5rem;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TP4 · Transformada de Hough - Asinari, Gustavo Rafael</h1>
+    <div class="subtitle">Detección de rectas y circunferencias en imágenes reales de motores - Legajo: VINF 012509</div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="hough-circles-real">Hough para Circunferencias</div>
+    <div class="tab" data-tab="hough-lines-real">Hough para Rectas</div>
+    <div class="tab" data-tab="comparison">Comparativa de Métodos</div>
+  </div>
+
+  <!-- Hough para Circunferencias con Imagen Real -->
+  <div class="tab-content active" id="hough-circles-real">
+    <div class="card">
+      <h2>Detección del Aro en Imágenes Reales de Motores</h2>
+      
+      <div class="image-upload-section">
+        <input type="file" id="imageUploadCircles" accept="image/*" class="file-input">
+        <label for="imageUploadCircles" class="file-label">📷 Seleccionar Imagen del Motor</label>
+        <p style="margin-top: 0.5rem; color: #64748b; font-size: 0.875rem;">
+          Seleccione una fotografía donde el aro del motor sea claramente visible
+        </p>
+      </div>
+      
+      <div class="controls">
+        <button id="btnProcessCircles" class="success">🔍 Procesar Imagen</button>
+        <button id="btnResetCircles" class="secondary">🔄 Reiniciar</button>
+      </div>
+      
+      <div class="grid-2">
+        <div class="card">
+          <h2>Imagen Original</h2>
+          <div class="canvas-container">
+            <canvas id="originalCanvasCircles" width="600" height="400"></canvas>
+            <div class="processing-overlay" id="processingOverlayCircles">Procesando...</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Bordes Detectados</h2>
+          <div class="canvas-container">
+            <canvas id="edgesCanvasCircles" width="600" height="400"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2>Parámetros de Detección</h2>
+          <div class="controls">
+            <div class="control-group">
+              <label for="radius">Radio esperado (píxeles):</label>
+              <input type="number" id="radius" min="10" max="200" value="80">
+              <small style="color: #64748b;">Tamaño aproximado del aro en la imagen</small>
+            </div>
+            <div class="control-group">
+              <label for="lowThresholdCircles">Umbral inferior:</label>
+              <input type="number" id="lowThresholdCircles" min="0" max="255" value="50">
+              <small style="color: #64748b;">Bordes débiles (50-100)</small>
+            </div>
+            <div class="control-group">
+              <label for="highThresholdCircles">Umbral superior:</label>
+              <input type="number" id="highThresholdCircles" min="0" max="255" value="150">
+              <small style="color: #64748b;">Bordes fuertes (150-200)</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Resultados</h2>
+          <div id="resultsCircles" class="results">
+            <p>Seleccione una imagen del motor y haga clic en "Procesar Imagen"</p>
+          </div>
+          <div id="detectionInfoCircles"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hough para Rectas con Imagen Real -->
+  <div class="tab-content" id="hough-lines-real">
+    <div class="card">
+      <h2>Detección de Rectas en Imágenes Reales de Motores</h2>
+      
+      <div class="image-upload-section">
+        <input type="file" id="imageUploadLines" accept="image/*" class="file-input">
+        <label for="imageUploadLines" class="file-label">📷 Seleccionar Imagen del Motor</label>
+        <p style="margin-top: 0.5rem; color: #64748b; font-size: 0.875rem;">
+          Seleccione una fotografía donde las rectas (escuadra, bordes) sean visibles
+        </p>
+      </div>
+      
+      <div class="controls">
+        <button id="btnProcessLines" class="success">🔍 Procesar Imagen</button>
+        <button id="btnResetLines" class="secondary">🔄 Reiniciar</button>
+      </div>
+      
+      <div class="grid-2">
+        <div class="card">
+          <h2>Imagen Original</h2>
+          <div class="canvas-container">
+            <canvas id="originalCanvasLines" width="600" height="400"></canvas>
+            <div class="processing-overlay" id="processingOverlayLines">Procesando...</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Bordes Detectados</h2>
+          <div class="canvas-container">
+            <canvas id="edgesCanvasLines" width="600" height="400"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2>Parámetros de Detección</h2>
+          <div class="controls">
+            <div class="control-group">
+              <label for="thetaRes">Resolución θ (°):</label>
+              <input type="number" id="thetaRes" min="1" max="10" value="2">
+              <small style="color: #64748b;">Precisión angular (1-5° recomendado)</small>
+            </div>
+            <div class="control-group">
+              <label for="rhoRes">Resolución ρ (px):</label>
+              <input type="number" id="rhoRes" min="1" max="10" value="2">
+              <small style="color: #64748b;">Precisión de distancia (1-5 px)</small>
+            </div>
+            <div class="control-group">
+              <label for="thresholdLinesReal">Umbral de votos:</label>
+              <input type="number" id="thresholdLinesReal" min="10" max="200" value="50">
+              <small style="color: #64748b;">Mínimo votos para considerar recta</small>
+            </div>
+            <div class="control-group">
+              <label for="lowThresholdLines">Umbral inferior:</label>
+              <input type="number" id="lowThresholdLines" min="0" max="255" value="50">
+              <small style="color: #64748b;">Bordes débiles (50-100)</small>
+            </div>
+            <div class="control-group">
+              <label for="highThresholdLines">Umbral superior:</label>
+              <input type="number" id="highThresholdLines" min="0" max="255" value="150">
+              <small style="color: #64748b;">Bordes fuertes (150-200)</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Resultados</h2>
+          <div id="resultsLines" class="results">
+            <p>Seleccione una imagen del motor y haga clic en "Procesar Imagen"</p>
+          </div>
+          <div id="detectedLinesReal"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparativa de Métodos -->
+  <div class="tab-content" id="comparison">
+    <div class="card">
+      <h2>Análisis Comparativo de los Tres Enfoques</h2>
+      
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Criterio</th>
+            <th>Búsqueda en Espacio de Estados (TP2)</th>
+            <th>Red de Hopfield (TP3)</th>
+            <th>Transformada de Hough (TP4)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Adecuación al problema</strong></td>
+            <td>Baja - Para planificación de trayectorias</td>
+            <td>Media - Para reconocimiento de patrones discretos</td>
+            <td>Alta - Para detección de formas geométricas en imágenes reales</td>
+          </tr>
+          <tr>
+            <td><strong>Precisión en detección</strong></td>
+            <td>No aplica</td>
+            <td>Media - Limitada por patrones discretos</td>
+            <td>Alta - Detección precisa de centro en píxeles</td>
+          </tr>
+          <tr>
+            <td><strong>Robustez al ruido</strong></td>
+            <td>Alta - Algoritmos deterministas</td>
+            <td>Alta - Memoria asociativa limpia patrones</td>
+            <td>Media - Requiere buen preprocesamiento</td>
+          </tr>
+          <tr>
+            <td><strong>Complejidad computacional</strong></td>
+            <td>O(b^d) - Exponencial en profundidad</td>
+            <td>O(N²) - Cuadrática en neuronas</td>
+            <td>O(n·m·θ) - Depende de resolución</td>
+          </tr>
+          <tr>
+            <td><strong>Requerimiento de entrenamiento</strong></td>
+            <td>No requiere</td>
+            <td>Sí requiere - Patrones de entrenamiento</td>
+            <td>No requiere</td>
+          </tr>
+          <tr>
+            <td><strong>Generalización</strong></td>
+            <td>Baja - Problemas específicos</td>
+            <td>Media - Solo patrones similares</td>
+            <td>Alta - Cualquier instancia de la forma</td>
+          </tr>
+          <tr>
+            <td><strong>Facilidad de implementación</strong></td>
+            <td>Media - Algoritmos de búsqueda</td>
+            <td>Media - Reglas de aprendizaje</td>
+            <td>Media - Manejo de espacios de parámetros</td>
+          </tr>
+          <tr>
+            <td><strong>Aplicación a imágenes reales</strong></td>
+            <td>No aplicable</td>
+            <td>Limitada - Requiere discretización</td>
+            <td>Excelente - Procesamiento directo</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="recommendation">
+        <h3>Recomendación Fundamentada</h3>
+        <p>Para el problema específico de detección del centro del aro en fotografías reales de motores, se recomienda la <strong>Transformada de Hough para circunferencias</strong> por las siguientes razones:</p>
+        <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+          <li>Proporciona una solución directa y específica al problema planteado</li>
+          <li>Ofrece alta precisión en la detección de coordenadas (X,Y) del centro en píxeles</li>
+          <li>No requiere fase de entrenamiento, a diferencia de Hopfield</li>
+          <li>Es robusta frente a variaciones de iluminación y calidad de imagen</li>
+          <li>Permite el procesamiento directo de imágenes reales sin discretización</li>
+          <li>Representa la "inteligencia mínima necesaria" solicitada por la empresa</li>
+        </ul>
+        <p style="margin-top: 0.5rem;"><strong>Implementación recomendada en planta:</strong></p>
+        <ol style="margin-top: 0.5rem; margin-left: 1.5rem;">
+          <li>Captura de imagen con cámara industrial posicionada sobre la línea de montaje</li>
+          <li>Preprocesamiento (conversión a grises, filtrado Gaussiano)</li>
+          <li>Detección de bordes con algoritmo Canny</li>
+          <li>Transformada de Hough para circunferencias con radio conocido</li>
+          <li>Envío de coordenadas (X,Y) al sistema de control del robot</li>
+          <li>Opcional: Verificación con detección de rectas para la escuadra de referencia</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ====== CONFIGURACIÓN GENERAL ======
+    const MAX_CANVAS_WIDTH = 600;
+    const MAX_CANVAS_HEIGHT = 400;
+
+    // ====== FUNCIONES COMPARTIDAS DE PROCESAMIENTO DE IMÁGENES ======
+    
+    // Convertir a escala de grises
+    function toGrayscale(imageData) {
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+        data[i] = data[i+1] = data[i+2] = gray;
+      }
+      return imageData;
+    }
+
+    // Aplicar filtro Gaussiano
+    function applyGaussianBlur(imageData, radius = 1) {
+      const width = imageData.width;
+      const height = imageData.height;
+      const data = imageData.data;
+      const output = new ImageData(width, height);
+      
+      const kernel = createGaussianKernel(radius);
+      const kernelSize = kernel.length;
+      const half = Math.floor(kernelSize / 2);
+      
+      // Aplicar kernel horizontal
+      const tempData = new Uint8ClampedArray(data.length);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          let r = 0, g = 0, b = 0;
+          for (let kx = -half; kx <= half; kx++) {
+            const px = Math.max(0, Math.min(width - 1, x + kx));
+            const idx = (y * width + px) * 4;
+            const weight = kernel[kx + half];
+            r += data[idx] * weight;
+            g += data[idx + 1] * weight;
+            b += data[idx + 2] * weight;
+          }
+          const outIdx = (y * width + x) * 4;
+          tempData[outIdx] = r;
+          tempData[outIdx + 1] = g;
+          tempData[outIdx + 2] = b;
+          tempData[outIdx + 3] = data[outIdx + 3];
+        }
+      }
+      
+      // Aplicar kernel vertical
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          let r = 0, g = 0, b = 0;
+          for (let ky = -half; ky <= half; ky++) {
+            const py = Math.max(0, Math.min(height - 1, y + ky));
+            const idx = (py * width + x) * 4;
+            const weight = kernel[ky + half];
+            r += tempData[idx] * weight;
+            g += tempData[idx + 1] * weight;
+            b += tempData[idx + 2] * weight;
+          }
+          const outIdx = (y * width + x) * 4;
+          output.data[outIdx] = r;
+          output.data[outIdx + 1] = g;
+          output.data[outIdx + 2] = b;
+          output.data[outIdx + 3] = 255;
+        }
+      }
+      
+      return output;
+    }
+
+    function createGaussianKernel(radius) {
+      const size = radius * 2 + 1;
+      const kernel = new Array(size);
+      const sigma = radius / 2;
+      let sum = 0;
+      
+      for (let i = 0; i < size; i++) {
+        const x = i - radius;
+        kernel[i] = Math.exp(-(x * x) / (2 * sigma * sigma));
+        sum += kernel[i];
+      }
+      
+      // Normalizar
+      for (let i = 0; i < size; i++) {
+        kernel[i] /= sum;
+      }
+      
+      return kernel;
+    }
+
+    // Detección de bordes con Canny
+    function cannyEdgeDetection(imageData, lowThreshold, highThreshold) {
+      const width = imageData.width;
+      const height = imageData.height;
+      
+      // 1. Calcular gradientes
+      const gradients = computeGradients(imageData);
+      
+      // 2. Supresión no máxima
+      const suppressed = nonMaximumSuppression(gradients);
+      
+      // 3. Umbralización con histéresis
+      const edges = hysteresisThresholding(suppressed, lowThreshold, highThreshold);
+      
+      return edges;
+    }
+
+    function computeGradients(imageData) {
+      const width = imageData.width;
+      const height = imageData.height;
+      const data = imageData.data;
+      
+      const gradX = new Array(width * height).fill(0);
+      const gradY = new Array(width * height).fill(0);
+      const magnitude = new Array(width * height).fill(0);
+      const direction = new Array(width * height).fill(0);
+      
+      // Kernels de Sobel
+      const sobelX = [
+        -1, 0, 1,
+        -2, 0, 2,
+        -1, 0, 1
+      ];
+      
+      const sobelY = [
+        -1, -2, -1,
+         0,  0,  0,
+         1,  2,  1
+      ];
+      
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          let gx = 0, gy = 0;
+          
+          for (let ky = -1; ky <= 1; ky++) {
+            for (let kx = -1; kx <= 1; kx++) {
+              const pixelIndex = ((y + ky) * width + (x + kx)) * 4;
+              const kernelIndex = (ky + 1) * 3 + (kx + 1);
+              const gray = data[pixelIndex]; // Ya está en escala de grises
+              
+              gx += gray * sobelX[kernelIndex];
+              gy += gray * sobelY[kernelIndex];
+            }
+          }
+          
+          const index = y * width + x;
+          gradX[index] = gx;
+          gradY[index] = gy;
+          magnitude[index] = Math.sqrt(gx * gx + gy * gy);
+          direction[index] = Math.atan2(gy, gx);
+        }
+      }
+      
+      return { gradX, gradY, magnitude, direction, width, height };
+    }
+
+    function nonMaximumSuppression(gradients) {
+      const { magnitude, direction, width, height } = gradients;
+      const suppressed = new Array(width * height).fill(0);
+      
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          const index = y * width + x;
+          const angle = direction[index] * 180 / Math.PI;
+          const mag = magnitude[index];
+          
+          let q = 255, r = 255;
+          
+          // Discretizar la dirección
+          if ((angle < 22.5 && angle >= -22.5) || angle >= 157.5 || angle < -157.5) {
+            // Horizontal
+            q = magnitude[index + 1];
+            r = magnitude[index - 1];
+          } else if ((angle >= 22.5 && angle < 67.5) || (angle >= -157.5 && angle < -112.5)) {
+            // Diagonal 45°
+            q = magnitude[index + width + 1];
+            r = magnitude[index - width - 1];
+          } else if ((angle >= 67.5 && angle < 112.5) || (angle >= -112.5 && angle < -67.5)) {
+            // Vertical
+            q = magnitude[index + width];
+            r = magnitude[index - width];
+          } else if ((angle >= 112.5 && angle < 157.5) || (angle >= -67.5 && angle < -22.5)) {
+            // Diagonal 135°
+            q = magnitude[index + width - 1];
+            r = magnitude[index - width + 1];
+          }
+          
+          if (mag >= q && mag >= r) {
+            suppressed[index] = mag;
+          }
+        }
+      }
+      
+      return { suppressed, width, height };
+    }
+
+    function hysteresisThresholding(suppressed, lowThreshold, highThreshold) {
+      const { suppressed: data, width, height } = suppressed;
+      const edges = new Array(width * height).fill(0);
+      
+      // Aplicar umbrales
+      for (let i = 0; i < data.length; i++) {
+        if (data[i] >= highThreshold) {
+          edges[i] = 255; // Borde fuerte
+        } else if (data[i] >= lowThreshold) {
+          edges[i] = 128; // Borde débil
+        }
+      }
+      
+      // Conectar bordes
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          const index = y * width + x;
+          if (edges[index] === 128) {
+            // Verificar si está conectado a un borde fuerte
+            let connected = false;
+            for (let ky = -1; ky <= 1 && !connected; ky++) {
+              for (let kx = -1; kx <= 1 && !connected; kx++) {
+                if (edges[(y + ky) * width + (x + kx)] === 255) {
+                  connected = true;
+                  edges[index] = 255;
+                }
+              }
+            }
+            if (!connected) {
+              edges[index] = 0;
+            }
+          }
+        }
+      }
+      
+      return { edges, width, height };
+    }
+
+    // ====== HOUGH PARA CIRCUNFERENCIAS ======
+    const originalCanvasCircles = document.getElementById('originalCanvasCircles');
+    const originalCtxCircles = originalCanvasCircles.getContext('2d');
+    const edgesCanvasCircles = document.getElementById('edgesCanvasCircles');
+    const edgesCtxCircles = edgesCanvasCircles.getContext('2d');
+    const processingOverlayCircles = document.getElementById('processingOverlayCircles');
+    
+    let originalImageCircles = null;
+
+    // Cargar imagen para circunferencias
+    document.getElementById('imageUploadCircles').addEventListener('change', function(e) {
+      handleImageUpload(e, originalCanvasCircles, originalCtxCircles, 'resultsCircles', 'Imagen cargada. Haga clic en "Procesar Imagen" para detectar el aro.');
+      originalImageCircles = originalCanvasCircles;
+    });
+
+    // Transformada de Hough para circunferencias
+    function houghTransformCircles(edges, radius) {
+      const { edges: data, width, height } = edges;
+      const accumulator = Array.from({length: height}, () => Array(width).fill(0));
+      
+      // Recoger puntos de borde
+      const edgePoints = [];
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (data[y * width + x] === 255) {
+            edgePoints.push({x, y});
+          }
+        }
+      }
+      
+      // Para cada punto de borde, votar por centros posibles
+      edgePoints.forEach(point => {
+        for (let angle = 0; angle < 360; angle += 2) { // Incremento de 2 grados para eficiencia
+          const theta = angle * Math.PI / 180;
+          const a = Math.round(point.x - radius * Math.cos(theta));
+          const b = Math.round(point.y - radius * Math.sin(theta));
+          
+          if (a >= 0 && a < width && b >= 0 && b < height) {
+            accumulator[b][a]++;
+          }
+        }
+      });
+      
+      return { accumulator, width, height };
+    }
+
+    // Encontrar centros en el acumulador
+    function findCircleCenters(accumulator, threshold) {
+      const centers = [];
+      const height = accumulator.length;
+      const width = accumulator[0].length;
+      
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (accumulator[y][x] >= threshold) {
+            centers.push({
+              x,
+              y,
+              votes: accumulator[y][x]
+            });
+          }
+        }
+      }
+      
+      // Ordenar por votos y agrupar centros cercanos
+      centers.sort((a, b) => b.votes - a.votes);
+      
+      const filteredCenters = [];
+      const used = new Set();
+      
+      for (const center of centers) {
+        if (used.has(center.x + ',' + center.y)) continue;
+        
+        // Agrupar centros cercanos
+        let sumX = center.x * center.votes;
+        let sumY = center.y * center.votes;
+        let totalVotes = center.votes;
+        used.add(center.x + ',' + center.y);
+        
+        for (const other of centers) {
+          if (used.has(other.x + ',' + other.y)) continue;
+          const dist = Math.sqrt((center.x - other.x) ** 2 + (center.y - other.y) ** 2);
+          if (dist < 10) { // Radio de agrupación
+            sumX += other.x * other.votes;
+            sumY += other.y * other.votes;
+            totalVotes += other.votes;
+            used.add(other.x + ',' + other.y);
+          }
+        }
+        
+        filteredCenters.push({
+          x: Math.round(sumX / totalVotes),
+          y: Math.round(sumY / totalVotes),
+          votes: totalVotes
+        });
+      }
+      
+      return filteredCenters.sort((a, b) => b.votes - a.votes);
+    }
+
+    // Procesar imagen para circunferencias
+    document.getElementById('btnProcessCircles').addEventListener('click', function() {
+      processImage(
+        originalCanvasCircles, 
+        originalCtxCircles, 
+        edgesCanvasCircles, 
+        edgesCtxCircles, 
+        processingOverlayCircles, 
+        'resultsCircles', 
+        'detectionInfoCircles',
+        parseInt(document.getElementById('lowThresholdCircles').value),
+        parseInt(document.getElementById('highThresholdCircles').value),
+        processCircles
+      );
+    });
+
+    function processCircles(edges, canvas) {
+      const radius = parseInt(document.getElementById('radius').value);
+      
+      // Aplicar Transformada de Hough
+      const houghResult = houghTransformCircles(edges, radius);
+      
+      // Encontrar centros
+      const threshold = Math.max(10, Math.floor(houghResult.width * houghResult.height * 0.001));
+      const centers = findCircleCenters(houghResult.accumulator, threshold);
+      
+      // Mostrar resultados
+      if (centers.length > 0) {
+        const bestCenter = centers[0];
+        
+        // Dibujar centro
+        originalCtxCircles.strokeStyle = '#dc2626';
+        originalCtxCircles.lineWidth = 3;
+        originalCtxCircles.beginPath();
+        originalCtxCircles.arc(bestCenter.x, bestCenter.y, 5, 0, 2 * Math.PI);
+        originalCtxCircles.stroke();
+        
+        // Dibujar círculo
+        originalCtxCircles.strokeStyle = '#dc2626';
+        originalCtxCircles.lineWidth = 2;
+        originalCtxCircles.beginPath();
+        originalCtxCircles.arc(bestCenter.x, bestCenter.y, radius, 0, 2 * Math.PI);
+        originalCtxCircles.stroke();
+        
+        // Mostrar información
+        document.getElementById('resultsCircles').innerHTML = `
+          <div class="result-item">
+            <strong>Centro detectado:</strong> (${bestCenter.x}, ${bestCenter.y})<br>
+            <strong>Radio utilizado:</strong> ${radius} píxeles<br>
+            <strong>Votos:</strong> ${bestCenter.votes}<br>
+            <strong>Umbral:</strong> ${threshold}
+          </div>
+        `;
+        
+        document.getElementById('detectionInfoCircles').innerHTML = `
+          <p>El centro del aro ha sido detectado correctamente. Las coordenadas (${bestCenter.x}, ${bestCenter.y}) pueden ser utilizadas por el robot para el posicionamiento preciso.</p>
+        `;
+      } else {
+        document.getElementById('resultsCircles').innerHTML = `
+          <div class="result-item" style="background: #fecaca;">
+            <strong>No se detectó el aro</strong><br>
+            Intente ajustar los parámetros (radio, umbrales) o use una imagen con mejor contraste.
+          </div>
+        `;
+        document.getElementById('detectionInfoCircles').innerHTML = '';
+      }
+    }
+
+    // Reiniciar circunferencias
+    document.getElementById('btnResetCircles').addEventListener('click', function() {
+      resetImage(originalCanvasCircles, originalCtxCircles, edgesCanvasCircles, 'resultsCircles', 'detectionInfoCircles');
+    });
+
+    // ====== HOUGH PARA RECTAS CON IMAGEN REAL ======
+    const originalCanvasLines = document.getElementById('originalCanvasLines');
+    const originalCtxLines = originalCanvasLines.getContext('2d');
+    const edgesCanvasLines = document.getElementById('edgesCanvasLines');
+    const edgesCtxLines = edgesCanvasLines.getContext('2d');
+    const processingOverlayLines = document.getElementById('processingOverlayLines');
+    
+    let originalImageLines = null;
+
+    // Cargar imagen para rectas
+    document.getElementById('imageUploadLines').addEventListener('change', function(e) {
+      handleImageUpload(e, originalCanvasLines, originalCtxLines, 'resultsLines', 'Imagen cargada. Haga clic en "Procesar Imagen" para detectar rectas.');
+      originalImageLines = originalCanvasLines;
+    });
+
+    // Transformada de Hough para rectas
+    function houghTransformLines(edges, thetaRes, rhoRes) {
+      const { edges: data, width, height } = edges;
+      const diag = Math.sqrt(width**2 + height**2);
+      const thetaSteps = Math.ceil(180 / thetaRes);
+      const rhoSteps = Math.ceil((2 * diag) / rhoRes);
+      
+      // Inicializar acumulador
+      const accumulator = Array.from({length: rhoSteps}, () => Array(thetaSteps).fill(0));
+      
+      // Recoger puntos de borde
+      const edgePoints = [];
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (data[y * width + x] === 255) {
+            edgePoints.push({x, y});
+          }
+        }
+      }
+      
+      // Llenar acumulador
+      edgePoints.forEach(point => {
+        for (let thetaIdx = 0; thetaIdx < thetaSteps; thetaIdx++) {
+          const theta = (thetaIdx * thetaRes) * Math.PI / 180;
+          const rho = point.x * Math.cos(theta) + point.y * Math.sin(theta);
+          const rhoIdx = Math.floor((rho + diag) / rhoRes);
+          
+          if (rhoIdx >= 0 && rhoIdx < rhoSteps) {
+            accumulator[rhoIdx][thetaIdx]++;
+          }
+        }
+      });
+      
+      return {
+        accumulator,
+        thetaSteps,
+        rhoSteps,
+        thetaRes,
+        rhoRes,
+        diag,
+        width,
+        height
+      };
+    }
+
+    // Encontrar rectas en el acumulador
+    function findLines(accumulator, threshold, thetaSteps, rhoSteps, thetaRes, rhoRes, diag, width, height) {
+      const lines = [];
+      
+      for (let rhoIdx = 0; rhoIdx < rhoSteps; rhoIdx++) {
+        for (let thetaIdx = 0; thetaIdx < thetaSteps; thetaIdx++) {
+          if (accumulator[rhoIdx][thetaIdx] >= threshold) {
+            const theta = thetaIdx * thetaRes * Math.PI / 180;
+            const rho = (rhoIdx * rhoRes) - diag;
+            lines.push({
+              theta,
+              rho,
+              votes: accumulator[rhoIdx][thetaIdx]
+            });
+          }
+        }
+      }
+      
+      return lines.sort((a, b) => b.votes - a.votes);
+    }
+
+    // Dibujar recta en el canvas
+    function drawLine(ctx, line, width, height, color = '#2563eb') {
+      const { theta, rho } = line;
+      
+      // Calcular puntos extremos de la recta
+      let x1, y1, x2, y2;
+      
+      if (theta === 0) {
+        // Línea vertical
+        x1 = x2 = rho;
+        y1 = 0;
+        y2 = height;
+      } else {
+        // Calcular intersecciones con los bordes
+        const cosTheta = Math.cos(theta);
+        const sinTheta = Math.sin(theta);
+        
+        // Intersección con bordes izquierdo y derecho
+        const xLeft = 0;
+        const yLeft = (rho - xLeft * cosTheta) / sinTheta;
+        
+        const xRight = width;
+        const yRight = (rho - xRight * cosTheta) / sinTheta;
+        
+        // Intersección con bordes superior e inferior
+        const yTop = 0;
+        const xTop = (rho - yTop * sinTheta) / cosTheta;
+        
+        const yBottom = height;
+        const xBottom = (rho - yBottom * sinTheta) / cosTheta;
+        
+        // Encontrar los puntos que están dentro de la imagen
+        const points = [];
+        
+        if (yLeft >= 0 && yLeft <= height) points.push({x: xLeft, y: yLeft});
+        if (yRight >= 0 && yRight <= height) points.push({x: xRight, y: yRight});
+        if (xTop >= 0 && xTop <= width) points.push({x: xTop, y: yTop});
+        if (xBottom >= 0 && xBottom <= width) points.push({x: xBottom, y: yBottom});
+        
+        if (points.length >= 2) {
+          x1 = points[0].x;
+          y1 = points[0].y;
+          x2 = points[1].x;
+          y2 = points[1].y;
+        } else {
+          return; // No se puede dibujar la recta
+        }
+      }
+      
+      // Dibujar la recta
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+
+    // Procesar imagen para rectas
+    document.getElementById('btnProcessLines').addEventListener('click', function() {
+      processImage(
+        originalCanvasLines, 
+        originalCtxLines, 
+        edgesCanvasLines, 
+        edgesCtxLines, 
+        processingOverlayLines, 
+        'resultsLines', 
+        'detectedLinesReal',
+        parseInt(document.getElementById('lowThresholdLines').value),
+        parseInt(document.getElementById('highThresholdLines').value),
+        processLines
+      );
+    });
+
+    function processLines(edges, canvas) {
+      const thetaRes = parseInt(document.getElementById('thetaRes').value);
+      const rhoRes = parseInt(document.getElementById('rhoRes').value);
+      const threshold = parseInt(document.getElementById('thresholdLinesReal').value);
+      
+      // Aplicar Transformada de Hough
+      const houghResult = houghTransformLines(edges, thetaRes, rhoRes);
+      const lines = findLines(
+        houghResult.accumulator, 
+        threshold, 
+        houghResult.thetaSteps, 
+        houghResult.rhoSteps,
+        houghResult.thetaRes,
+        houghResult.rhoRes,
+        houghResult.diag,
+        houghResult.width,
+        houghResult.height
+      );
+      
+      // Dibujar rectas detectadas
+      lines.slice(0, 10).forEach((line, index) => {
+        const color = index === 0 ? '#dc2626' : '#2563eb'; // Primera recta en rojo
+        drawLine(originalCtxLines, line, houghResult.width, houghResult.height, color);
+      });
+      
+      // Mostrar resultados
+      document.getElementById('resultsLines').innerHTML = `
+        <div class="result-item">
+          <strong>Rectas detectadas:</strong> ${lines.length}<br>
+          <strong>Umbral:</strong> ${threshold} votos<br>
+          <strong>Resolución θ:</strong> ${thetaRes}°<br>
+          <strong>Resolución ρ:</strong> ${rhoRes} px
+        </div>
+      `;
+      
+      const detectedLinesDiv = document.getElementById('detectedLinesReal');
+      detectedLinesDiv.innerHTML = '<h3>Rectas principales detectadas:</h3>';
+      lines.slice(0, 5).forEach((line, idx) => {
+        const thetaDeg = (line.theta * 180 / Math.PI).toFixed(1);
+        const div = document.createElement('div');
+        div.className = 'result-item';
+        div.innerHTML = `
+          <strong>Recta ${idx+1}:</strong> θ=${thetaDeg}°, ρ=${line.rho.toFixed(1)}<br>
+          <small>Votos: ${line.votes}</small>
+        `;
+        detectedLinesDiv.appendChild(div);
+      });
+    }
+
+    // Reiniciar rectas
+    document.getElementById('btnResetLines').addEventListener('click', function() {
+      resetImage(originalCanvasLines, originalCtxLines, edgesCanvasLines, 'resultsLines', 'detectedLinesReal');
+    });
+
+    // ====== FUNCIONES UTILITARIAS COMPARTIDAS ======
+    
+    function handleImageUpload(event, canvas, ctx, resultsId, message) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const img = new Image();
+      img.onload = function() {
+        // Ajustar tamaño del canvas al de la imagen manteniendo relación de aspecto
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+          if (width > MAX_CANVAS_WIDTH) {
+            height = Math.round((height * MAX_CANVAS_WIDTH) / width);
+            width = MAX_CANVAS_WIDTH;
+          }
+        } else {
+          if (height > MAX_CANVAS_HEIGHT) {
+            width = Math.round((width * MAX_CANVAS_HEIGHT) / height);
+            height = MAX_CANVAS_HEIGHT;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        ctx.drawImage(img, 0, 0, width, height);
+        document.getElementById(resultsId).innerHTML = `<p>${message}</p>`;
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    function processImage(originalCanvas, originalCtx, edgesCanvas, edgesCtx, processingOverlay, resultsId, infoId, lowThreshold, highThreshold, callback) {
+      if (originalCanvas.width === 0 || originalCanvas.height === 0) {
+        alert('Por favor, cargue una imagen primero.');
+        return;
+      }
+      
+      processingOverlay.style.display = 'flex';
+      
+      setTimeout(() => {
+        try {
+          // Obtener datos de la imagen
+          const imageData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+          
+          // 1. Convertir a escala de grises
+          const grayData = toGrayscale(new ImageData(
+            new Uint8ClampedArray(imageData.data),
+            imageData.width,
+            imageData.height
+          ));
+          
+          // 2. Aplicar filtro Gaussiano
+          const blurredData = applyGaussianBlur(grayData, 2);
+          
+          // 3. Detección de bordes con Canny
+          const edges = cannyEdgeDetection(blurredData, lowThreshold, highThreshold);
+          
+          // Mostrar bordes
+          edgesCtx.putImageData(blurredData, 0, 0);
+          const edgeImageData = new ImageData(edges.width, edges.height);
+          for (let i = 0; i < edges.edges.length; i++) {
+            const value = edges.edges[i];
+            const idx = i * 4;
+            edgeImageData.data[idx] = value;
+            edgeImageData.data[idx + 1] = value;
+            edgeImageData.data[idx + 2] = value;
+            edgeImageData.data[idx + 3] = 255;
+          }
+          edgesCtx.putImageData(edgeImageData, 0, 0);
+          
+          // 4. Llamar al callback específico (circunferencias o rectas)
+          callback(edges, originalCanvas);
+          
+        } catch (error) {
+          console.error('Error en el procesamiento:', error);
+          document.getElementById(resultsId).innerHTML = `
+            <div class="result-item" style="background: #fecaca;">
+              <strong>Error en el procesamiento:</strong> ${error.message}
+            </div>
+          `;
+        } finally {
+          processingOverlay.style.display = 'none';
+        }
+      }, 100);
+    }
+
+    function resetImage(originalCanvas, originalCtx, edgesCanvas, resultsId, infoId) {
+      if (originalCanvas.width > 0 && originalCanvas.height > 0) {
+        // Restaurar imagen original
+        const img = new Image();
+        img.onload = function() {
+          originalCtx.drawImage(img, 0, 0, originalCanvas.width, originalCanvas.height);
+        };
+        img.src = originalCanvas.toDataURL();
+      }
+      edgesCanvas.getContext('2d').clearRect(0, 0, edgesCanvas.width, edgesCanvas.height);
+      document.getElementById(resultsId).innerHTML = '<p>Seleccione una imagen del motor y haga clic en "Procesar Imagen"</p>';
+      if (infoId) {
+        document.getElementById(infoId).innerHTML = '';
+      }
+    }
+
+    // ====== MANEJADORES DE TABS ======
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
